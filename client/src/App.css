@@ -23,9 +23,32 @@ tbody tr { cursor: pointer; }
 .task { border: 1px solid #ddd; border-radius: 8px; padding: 12px; margin: 12px 0; }
 .tag { background: #eee; color: #555; border-radius: 4px; padding: 2px 6px; font-size: 12px; margin-left: 8px; }
 .error { color: #b00020; background: #fde8e8; padding: 10px; border-radius: 6px; }
-.login-wrap { display: flex; justify-content: center; padding: 60px 16px; }
-.login-card { background: #fff; padding: 28px; border-radius: 12px; max-width: 480px; width: 100%; border-top: 6px solid var(--gold); }
-.login-card h1 { color: var(--purple); margin-top: 0; }
+.login-wrap { min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 32px 16px; background: linear-gradient(135deg, var(--black) 0%, #2e1065 55%, var(--purple) 100%); }
+.login-card { background: #fff; padding: 32px 28px; border-radius: 14px; max-width: 480px; width: 100%; border-top: 6px solid var(--gold); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45); }
+.login-card h1 { color: var(--purple); margin: 0 0 6px; font-size: 28px; line-height: 1.2; }
+.login-subtitle { color: #555; margin: 0 0 20px; font-size: 15px; }
+.login-form label { display: block; margin: 12px 0 4px; font-size: 14px; font-weight: 600; }
+.login-form input { width: 100%; padding: 10px 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; }
+.login-form input:focus { outline: 2px solid var(--purple); border-color: var(--purple); }
+.login-form button[type="submit"] { width: 100%; margin-top: 18px; padding: 12px; font-size: 16px; font-weight: 700; background: var(--purple); color: #fff; border: none; border-radius: 8px; cursor: pointer; }
+.login-form button[type="submit"]:hover:not(:disabled) { background: var(--gold); color: var(--black); }
+.login-form button[type="submit"]:disabled { opacity: 0.6; cursor: wait; }
+.login-error { margin-top: 14px; }
+.demo-logins { margin-top: 24px; padding-top: 18px; border-top: 1px solid #e5e4e7; }
+.demo-title { margin: 0 0 10px; font-size: 14px; font-weight: 600; }
+.demo-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.demo-btn { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; background: #f6f5f8; color: var(--black); border: 1px solid #ddd; padding: 10px 12px; border-radius: 8px; cursor: pointer; text-align: left; }
+.demo-btn:hover:not(:disabled) { border-color: var(--gold); background: #fff8e1; }
+.demo-btn strong { color: var(--purple); font-size: 14px; }
+.demo-btn span { font-size: 13px; color: #555; }
+.hint-list { margin: 14px 0 8px; padding-left: 18px; font-size: 13px; color: #555; }
+.hint-list li { margin: 3px 0; }
+@media (max-width: 520px) {
+  .login-wrap { padding: 16px 12px; align-items: flex-start; }
+  .login-card { padding: 24px 18px; }
+  .login-card h1 { font-size: 24px; }
+  .demo-buttons { grid-template-columns: 1fr; }
+}
 label { display: block; margin: 10px 0; font-size: 14px; }
 input, select { width: 100%; padding: 8px; margin-top: 4px; border: 1px solid #ccc; border-radius: 6px; }
 li select, td select { width: auto; display: inline-block; margin-left: 8px; }

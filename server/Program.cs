@@ -32,8 +32,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 builder.Services.AddAuthorization();
 
+var allowedOrigins = (builder.Configuration["AllowedOrigins"] ?? "http://localhost:5173,http://127.0.0.1:5173")
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 builder.Services.AddCors(o => o.AddPolicy("dev", p => p
-    .WithOrigins("http://localhost:5173", "http://127.0.0.1:5173")
+    .WithOrigins(allowedOrigins)
     .AllowAnyHeader().AllowAnyMethod()));
 
 var app = builder.Build();

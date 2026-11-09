@@ -114,6 +114,25 @@ All endpoints except `POST /api/auth/login` require a JWT (`Authorization: Beare
   403, a Developer updating someone else's subtask → 403, updating their own
   → 200, no token → 401, wrong password → 401.
 
+## Deployment
+
+Vercel hosts the React frontend only — it cannot run the .NET API. Set
+`VITE_API_URL` in Vercel to the hosted .NET API URL, otherwise login will
+404 (`POST /api/auth/login` has no backend on Vercel). The .NET API must be
+hosted separately. Deploy in two parts:
+
+1. **API host** (Render / Railway / Azure / Fly.io — any host that runs .NET 8):
+   set `Jwt__Key` to a long random secret (at least 32 chars, not the placeholder
+   in `appsettings.json`), and `AllowedOrigins` to the frontend URL, e.g.
+   `https://project-status-tracker.vercel.app`. Note SQLite (`app.db`) is a local
+   file: on an ephemeral host it resets on redeploy, so treat the deployed data
+   as demo data until a persistent database is added.
+2. **Frontend on Vercel:** import `ellabek-web/project-status-tracker`, Root
+   Directory `client`, Framework Vite, and set env var `VITE_API_URL` to the API
+   host URL (no trailing slash, no `/api` — the client appends it). Redeploy
+   after changing it; `VITE_API_URL` is baked in at build time.
+   Locally, leave `VITE_API_URL` unset — Vite proxies `/api` to localhost:5000.
+
 ## Not yet done
 
 - Real email / notifications and reminders (e.g. report due, overdue subtasks)

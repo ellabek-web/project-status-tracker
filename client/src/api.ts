@@ -1,4 +1,4 @@
-const API = '/api';
+const API = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '') + '/api';
 
 export interface AuthUser { userId: number; name: string; email: string; role: string; token: string; }
 export interface Project { id: number; name: string; description: string; managerId: number; managerName: string; targetDate: string; cadence: string; totalSubtasks: number; doneSubtasks: number; progressPercent: number; health: string; }

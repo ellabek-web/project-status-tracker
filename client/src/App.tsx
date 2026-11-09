@@ -26,6 +26,30 @@ export default function App() {
   const [error, setError] = useState('');
   const [email, setEmail] = useState('manager@demo.local');
   const [password, setPassword] = useState('ChangeMe123!');
+  const [signingIn, setSigningIn] = useState(false);
+
+  const DEMO_LOGINS = [
+    { label: 'Manager', name: 'Maya Chen', email: 'manager@demo.local' },
+    { label: 'Scrum Master', name: 'Sam Mwangi', email: 'scrum@demo.local' },
+    { label: 'Developer', name: 'Priya Nair', email: 'dev@demo.local' },
+    { label: 'President', name: 'Ada President', email: 'president@demo.local' },
+  ];
+
+  function friendlyLoginError(err: unknown): string {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (/404|Failed to fetch|NetworkError|Network request failed|Load failed/i.test(msg)) {
+      return "Can't reach the server — the API isn't deployed yet. Try again once the backend is online.";
+    }
+    return msg;
+  }
+
+  async function doDemoLogin(demoEmail: string) {
+    setError('');
+    setEmail(demoEmail);
+    setPassword('ChangeMe123!');
+    setSigningIn(true);
+    try { setUser(await login(demoEmail, 'ChangeMe123!')); } catch (err) { setError(friendlyLoginError(err)); } finally { setSigningIn(false); }
+  }
 
   const [dashboard, setDashboard] = useState<Awaited<ReturnType<typeof api.dashboard>> | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -51,8 +75,8 @@ export default function App() {
   useEffect(() => { if (user) void loadAll(); }, [user, loadAll]);
 
   async function doLogin(e: React.FormEvent) {
-    e.preventDefault(); setError('');
-    try { setUser(await login(email, password)); } catch (err) { setError(err instanceof Error ? err.message : String(err)); }
+    e.preventDefault(); setError(''); setSigningIn(true);
+    try { setUser(await login(email, password)); } catch (err) { setError(friendlyLoginError(err)); } finally { setSigningIn(false); }
   }
 
   async function refreshProject() {
@@ -79,15 +103,33 @@ export default function App() {
       <div className="login-wrap">
         <div className="login-card">
           <h1>Project Status Tracker</h1>
-          <p>Real progress from subtasks — not estimates. Sign in with your demo account.</p>
-          <form onSubmit={doLogin}>
-            <label>Email<input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required /></label>
-            <label>Password<input value={password} onChange={(e) => setPassword(e.target.value)} type="password" required /></label>
-            <button type="submit">Sign in</button>
+          <p className="login-subtitle">Real progress from subtasks — not estimates.</p>
+          <form className="login-form" onSubmit={doLogin}>
+            <label htmlFor="login-email">Email</label>
+            <input id="login-email" value={email} onChange={(e) => setEmail(e.target.value)} type="email" required autoComplete="email" />
+            <label htmlFor="login-password">Password</label>
+            <input id="login-password" value={password} onChange={(e) => setPassword(e.target.value)} type="password" required autoComplete="current-password" />
+            <button type="submit" disabled={signingIn}>{signingIn ? 'Signing in…' : 'Sign in'}</button>
           </form>
-          {error && <p className="error">{error}</p>}
-          <p className="hint">Demo logins (password <code>ChangeMe123!</code> for all — change before real use):<br />
-            manager@demo.local · scrum@demo.local · dev@demo.local · president@demo.local · evp@demo.local · vp@demo.local · director@demo.local</p>
+          {error && <p className="error login-error" role="alert">{error}</p>}
+          <div className="demo-logins">
+            <p className="demo-title">Try a demo account — one tap to sign in:</p>
+            <div className="demo-buttons">
+              {DEMO_LOGINS.map((d) => (
+                <button key={d.email} type="button" className="demo-btn" disabled={signingIn} onClick={() => void doDemoLogin(d.email)}>
+                  <strong>{d.label}</strong><span>{d.name}</span>
+                </button>
+              ))}
+            </div>
+            <ul className="hint-list">
+              <li><strong>Manager</strong> — Maya Chen · manager@demo.local</li>
+              <li><strong>Scrum Master</strong> — Sam Mwangi · scrum@demo.local</li>
+              <li><strong>Developer</strong> — Priya Nair · dev@demo.local</li>
+              <li><strong>President</strong> — Ada President · president@demo.local</li>
+              <li><strong>Also available:</strong> EVP (evp@demo.local), VP (vp@demo.local), Director (director@demo.local)</li>
+            </ul>
+            <p className="hint">Demo password for all accounts: <code>ChangeMe123!</code> — change before real use.</p>
+          </div>
         </div>
       </div>
     );
