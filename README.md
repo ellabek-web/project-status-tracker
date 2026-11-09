@@ -114,24 +114,82 @@ All endpoints except `POST /api/auth/login` require a JWT (`Authorization: Beare
   403, a Developer updating someone else's subtask → 403, updating their own
   → 200, no token → 401, wrong password → 401.
 
-## Deployment
+## Hosting
 
-Vercel hosts the React frontend only — it cannot run the .NET API. Set
-`VITE_API_URL` in Vercel to the hosted .NET API URL, otherwise login will
-404 (`POST /api/auth/login` has no backend on Vercel). The .NET API must be
-hosted separately. Deploy in two parts:
+### Single-process mode (recommended: Replit / Render / Azure)
+
+The .NET API also serves the React client build, on **one port, in one
+process**. No separate frontend host is needed, and no CORS is needed
+between frontend and API — they are the same origin.
+
+- The server binds to the `$PORT` env var when the host sets it
+  (`http://0.0.0.0:$PORT`), otherwise `http://localhost:5000`.
+- `server/Program.cs` serves `client/dist` (built by `npm run build`) with
+  `UseDefaultFiles` + `UseStaticFiles`, and `MapFallbackToFile("index.html")`
+  for SPA routes — after the `/api` routes, so `/api/*` is never swallowed
+  by the fallback (unknown API paths return 404 JSON).
+- `dotnet publish` builds the client first (`npm install && npm run build`
+  in `client/`, see the `BuildClient` target in `server/server.csproj`)
+  and copies `client/dist` into the publish output. Skip it with
+  `dotnet publish -p:BuildClient=false` if you already built the client.
+  If node/npm is missing, publish stops with a clear message.
+
+**Run locally (single process):**
+
+```bash
+cd client && npm install && npm run build   # builds client/dist
+cd ../server
+~/workspace/.dotnet/dotnet run              # or: dotnet run
+# Open http://localhost:5000 — the React app and the API are both there.
+# (Or: PORT=5001 dotnet run, then open http://localhost:5001)
+```
+
+**Replit:** the root `.replit` file runs
+`dotnet run --project server --urls http://0.0.0.0:${PORT:-5000}`.
+Replit sets `$PORT`; the API serves the client on that same port. Use the
+Replit .NET (dotnet) environment, and set `Jwt__Key` to a long random secret
+in Replit Secrets (at least 32 chars, not the placeholder in
+`appsettings.json`).
+
+**Render:** the root `render.yaml` defines a free web service that runs
+`dotnet publish server/server.csproj -c Release` and then starts
+`dotnet server/bin/Release/net8.0/publish/server.dll`. Render sets `$PORT`.
+It also generates a random `Jwt__Key`. Note: if Render rejects
+`env: dotnet` for this service, use a Dockerfile-based service instead —
+Render has no native .NET runtime on every plan.
+
+**Azure:** deploy the published output (`dotnet publish`) to an App Service
+(.NET 8). Set `Jwt__Key` and `AllowedOrigins` in App Settings; the app
+binds to the port Azure provides via `$PORT` (or the App Service default).
+
+In all single-process cases, leave `VITE_API_URL` **unset / empty** — the
+client calls the relative `/api` on the same origin. Note SQLite (`app.db`)
+is a local file: on an ephemeral host it resets on redeploy, so treat
+deployed data as demo data until a persistent database is added.
+
+### Split hosting (frontend on Vercel, API elsewhere)
+
+Vercel hosts the React frontend only — it cannot run the .NET API. That is
+why the live Vercel site `https://project-status-tracker-smoky.vercel.app/`
+returned 404 for `/api/*` before single-process mode existed. If you keep
+the split setup instead:
 
 1. **API host** (Render / Railway / Azure / Fly.io — any host that runs .NET 8):
    set `Jwt__Key` to a long random secret (at least 32 chars, not the placeholder
    in `appsettings.json`), and `AllowedOrigins` to the frontend URL, e.g.
-   `https://project-status-tracker.vercel.app`. Note SQLite (`app.db`) is a local
-   file: on an ephemeral host it resets on redeploy, so treat the deployed data
-   as demo data until a persistent database is added.
+   `https://project-status-tracker-smoky.vercel.app`.
 2. **Frontend on Vercel:** import `ellabek-web/project-status-tracker`, Root
    Directory `client`, Framework Vite, and set env var `VITE_API_URL` to the API
    host URL (no trailing slash, no `/api` — the client appends it). Redeploy
    after changing it; `VITE_API_URL` is baked in at build time.
    Locally, leave `VITE_API_URL` unset — Vite proxies `/api` to localhost:5000.
+
+### VITE_API_URL
+
+- **Empty / unset (default):** the client calls relative `/api` — correct
+  for single-process hosting and for local Vite dev (proxy to localhost:5000).
+- **Set to a backend URL:** only when the frontend is hosted separately
+  (e.g. on Vercel) from the API. No trailing slash, no `/api` suffix.
 
 ## Not yet done
 

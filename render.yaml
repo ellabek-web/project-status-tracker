@@ -1,0 +1,23 @@
+# Project Status Tracker — Render (single-process mode).
+# One free web service: the .NET API serves the React client build on the
+# same port ($PORT, set by Render; Program.cs binds to it).
+# `dotnet publish` builds the client first (see server/server.csproj) and
+# copies client/dist into the publish output.
+# NOTE: SQLite (app.db) is a local file and is ephemeral on Render's free
+# tier — it resets on redeploy. Treat deployed data as demo data until a
+# persistent database is added. Set Jwt__Key to a long random secret in
+# the Render dashboard (never commit a real secret).
+services:
+  - type: web
+    name: project-status-tracker
+    env: dotnet
+    plan: free
+    buildCommand: dotnet publish server/server.csproj -c Release
+    startCommand: dotnet server/bin/Release/net8.0/publish/server.dll
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: AllowedOrigins
+        value: https://project-status-tracker-smoky.vercel.app
+      - key: Jwt__Key
+        generateValue: true

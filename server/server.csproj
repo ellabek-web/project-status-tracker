@@ -20,4 +20,37 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
+  <!--
+    Single-process hosting: `dotnet publish` builds the React client first
+    (npm install + npm run build in ../client) so the publish output
+    contains client/dist, which Program.cs serves on the same port as the
+    API. Skip with: dotnet publish -p:BuildClient=false
+    If node/npm is not installed, publish stops with a clear message
+    instead of silently shipping a server with no frontend.
+  -->
+  <PropertyGroup>
+    <ClientDir>$(MSBuildProjectDirectory)/../client</ClientDir>
+  </PropertyGroup>
+
+  <Target Name="BuildClient" BeforeTargets="Publish" Condition="'$(BuildClient)' != 'false'">
+    <Exec Command="command -v npm &gt;/dev/null 2&gt;&amp;1 || (echo 'ERROR: npm/node not found - build the client first: cd ../client &amp;&amp; npm install &amp;&amp; npm run build' &amp;&amp; exit 1)"
+          WorkingDirectory="$(ClientDir)" />
+    <Exec Command="npm install &amp;&amp; npm run build" WorkingDirectory="$(ClientDir)" />
+  </Target>
+
+  <!-- Copy the freshly built client/dist into the publish output as
+       client/dist, so Program.cs finds it when run from the publish folder.
+       (A plain Content glob evaluated at project load does not reliably
+       pick up files built by the BuildClient target during publish, so
+       copy them physically after Publish instead.) -->
+  <Target Name="CopyClientDistToPublish" AfterTargets="Publish" DependsOnTargets="BuildClient" Condition="'$(BuildClient)' != 'false'">
+    <ItemGroup>
+      <ClientDistFiles Include="$(ClientDir)/dist/**/*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(ClientDistFiles)"
+          DestinationFiles="@(ClientDistFiles->'$(PublishDir)client/dist/%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true" />
+    <Message Importance="high" Text="Copied React client build to $(PublishDir)client/dist" />
+  </Target>
+
 </Project>

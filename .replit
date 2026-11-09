@@ -1,0 +1,9 @@
+# Project Status Tracker — single-process mode on Replit.
+# The .NET API serves the React client build on the same port, so one
+# process is the whole app. Replit sets $PORT; Program.cs binds to it
+# (default 5000 if $PORT is empty). No separate frontend process needed.
+# First run: the server builds the client via `dotnet publish` (see
+# server/server.csproj), or run `npm install && npm run build` in client/
+# once before starting. Requires the Replit .NET (dotnet) environment.
+language = "dotnet"
+run = "dotnet run --project server --urls http://0.0.0.0:${PORT:-5000}"
